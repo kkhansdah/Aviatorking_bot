@@ -1,43 +1,23 @@
 import telebot
-from datetime import datetime
-from predictor import predict_from_list, get_message_for_result, get_cashout_suggestion
-from scraper import get_live_data
+from predictor import predict_from_list
 
-BOT_TOKEN = "7832938380:AAFcNqOFR6uIcU9_Yfak4ijddMBxlj8_ScY"
+BOT_TOKEN = '7832938380:AAFcNqOFR6uIcU9_Yfak4ijddMBxlj8_ScY'
 bot = telebot.TeleBot(BOT_TOKEN)
 
-@bot.message_handler(commands=['start', 'help'])
-def send_welcome(message):
-    bot.reply_to(message, "👋 Aviator Predictor Bot चालू है!\n/predict टाइप करें prediction के लिए।")
+@bot.message_handler(commands=['start'])
+def start(m):
+    bot.reply_to(m, "👋 Aviator Predictor Bot चालू हो गया है!\n\n🧠 Prediction पाने के लिए /predict कमांड भेजें:\nउदाहरण:\n/predict 1.5 2.1 3.0 1.9 5.4")
 
 @bot.message_handler(commands=['predict'])
-def handle_predict(message):
-    nums, round_id = get_live_data()
+def predict(m):
+    try:
+        text = m.text.replace('/predict', '').strip()
+        nums = [float(x) for x in text.replace(',', ' ').split()]
+        if len(nums) < 5:
+            return bot.reply_to(m, "⚠️ कृपया कम से कम 5 multipliers दें!\nउदाहरण: /predict 2.1 1.9 3.0 4.2 1.8")
+        result = predict_from_list(nums)
+        bot.reply_to(m, f"📊 आखिरी Rounds: {nums[-5:]}\n{result['message']}")
+    except:
+        bot.reply_to(m, "❌ Format सही नहीं है!\nउदाहरण: /predict 1.5 2.3 3.1 1.8 4.0")
 
-    if not nums:
-        bot.reply_to(message, "❌ लाइव डेटा नहीं मिल पाया। वेबसाइट डाउन हो सकती है।")
-        return
-
-    result = predict_from_list(nums)
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    prediction = get_message_for_result(result)
-    advice = get_cashout_suggestion(result)
-
-    reply = f"""🕒 Time: {now}
-🎲 Round ID: #{round_id}
-
-📡 Multipliers: {nums}
-
-🎯 3x+: {result['3x']} बार
-💥 5x+: {result['5x']} बार
-🔥 10x+: {result['10x']} बार
-🚀 20x+: {result['20x']} बार
-
-🧠 Prediction: {prediction}
-💸 Cashout Advice: {advice}
-"""
-    bot.reply_to(message, reply)
-
-print("🤖 Bot चालू हो गया है...")
-bot.infinity_polling()
+bot.polling()
