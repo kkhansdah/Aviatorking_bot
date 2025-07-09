@@ -1,25 +1,22 @@
 import requests
 from bs4 import BeautifulSoup
 
-def get_live_data():
+def get_latest_multipliers():
+    url = "https://kwgvip5.com/"
+
     try:
-        url = "https://kwgvip5.com"
         response = requests.get(url, timeout=10)
         soup = BeautifulSoup(response.text, "html.parser")
 
-        blocks = soup.find_all("div", class_="crash-point")[:10]
+        divs = soup.find_all("div", class_="profit__number")
         multipliers = []
 
-        for block in blocks:
-            text = block.text.strip().replace("x", "")
-            try:
+        for d in divs[:10]:
+            text = d.text.strip().replace("x", "")
+            if text:
                 multipliers.append(float(text))
-            except:
-                continue
 
-        round_id = "LIVE"
-        return multipliers, round_id
-
+        return multipliers[::-1]
     except Exception as e:
-        print("❌ Scraper Error:", e)
-        return [], "N/A"
+        print("❌ Error fetching:", e)
+        return []
